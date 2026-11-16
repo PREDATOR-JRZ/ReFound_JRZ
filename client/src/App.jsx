@@ -348,7 +348,12 @@ function ReportPage() {
   const [matches, setMatches] = useState([]);
   const [matchError, setMatchError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const cameraRequest = useRef(0);
   const photoInput = useRef(null);
+  const videoElement = useRef(null);
+  const cameraStream = useRef(null);
 
   useEffect(() => {
     if (!photo) {
@@ -360,26 +365,108 @@ function ReportPage() {
     return () => URL.revokeObjectURL(previewUrl);
   }, [photo]);
 
+  useEffect(() => {
+    if (cameraOpen && videoElement.current && cameraStream.current) {
+      videoElement.current.srcObject = cameraStream.current;
+    }
+  }, [cameraOpen]);
+
+  useEffect(() => () => {
+    cameraStream.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
+  function closeCamera() {
+    cameraRequest.current += 1;
+    cameraStream.current?.getTracks().forEach((track) => track.stop());
+    cameraStream.current = null;
+    setCameraOpen(false);
+    setCameraReady(false);
+  }
+
+  function handlePhotoSelection(selected) {
+    setPhotoError("");
+    if (!photoTypes.includes(selected.type)) {
+      setPhotoError("Choose a JPG, PNG, or WebP image.");
+      setPhoto(null);
+      return false;
+    }
+    if (selected.size > maxPhotoSize) {
+      setPhotoError("This photo is larger than 5 MB. Choose a smaller image.");
+      setPhoto(null);
+      return false;
+    }
+    setPhoto(selected);
+    return true;
+  }
+
   function choosePhoto(event) {
     const selected = event.target.files?.[0];
-    setPhotoError("");
     if (!selected) {
       setPhoto(null);
       return;
     }
-    if (!photoTypes.includes(selected.type)) {
-      setPhotoError("Choose a JPG, PNG, or WebP image.");
-      event.target.value = "";
-      setPhoto(null);
+    if (!handlePhotoSelection(selected)) event.target.value = "";
+    closeCamera();
+  }
+
+  async function openCamera() {
+    setPhotoError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setPhotoError("Camera capture is not available in this browser. Choose a photo instead.");
       return;
     }
-    if (selected.size > maxPhotoSize) {
-      setPhotoError("This photo is larger than 5 MB. Choose a smaller image.");
-      event.target.value = "";
-      setPhoto(null);
+    const requestId = ++cameraRequest.current;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      if (requestId !== cameraRequest.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      cameraStream.current = stream;
+      setCameraOpen(true);
+      setCameraReady(false);
+    } catch (cameraError) {
+      if (requestId !== cameraRequest.current) return;
+      const message = cameraError.name === "NotAllowedError"
+        ? "Camera access was denied. Allow camera access in your browser settings or choose a photo instead."
+        : cameraError.name === "NotFoundError"
+          ? "No camera was found on this device. Choose a photo instead."
+          : `Could not open the camera: ${cameraError.message || "Check camera permissions and try again."}`;
+      setPhotoError(message);
+    }
+  }
+
+  function capturePhoto() {
+    const video = videoElement.current;
+    if (!video?.videoWidth || !video.videoHeight) {
+      setPhotoError("The camera is not ready yet. Wait a moment and try again.");
       return;
     }
-    setPhoto(selected);
+    const maxDimension = 1600;
+    const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setPhotoError("Could not capture the photo. Please try again.");
+      return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setPhotoError("Could not capture the photo. Please try again.");
+        return;
+      }
+      const capturedPhoto = new File([blob], "item-photo.jpg", { type: "image/jpeg" });
+      if (handlePhotoSelection(capturedPhoto)) {
+        if (photoInput.current) photoInput.current.value = "";
+        closeCamera();
+      }
+    }, "image/jpeg", 0.9);
   }
 
   function removePhoto() {
@@ -392,8 +479,10 @@ function ReportPage() {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    if (!photo) form.delete("photo");
+    if (photo) form.set("photo", photo);
+    else form.delete("photo");
     form.set("type", type);
+    closeCamera();
     setError("");
     setCreated(null);
     setBackupToken("");
@@ -468,11 +557,24 @@ function ReportPage() {
           </label>
           <label className="form-wide">Item name<input name="title" required maxLength="120" placeholder="e.g. Blue water bottle" /></label>
           <label className="form-wide">Description<textarea name="description" rows="4" required maxLength="2000" placeholder="Details that could identify the item" /></label>
-          <label className="form-wide photo-upload">
+          <div className="form-wide photo-upload">
             <span id="photo-upload-label">Add a photo <span className="optional-label">(optional)</span></span>
             <span className="photo-upload-help" id="photo-upload-help">A clear photo helps others recognize the item. JPG, PNG, or WebP · up to 5 MB.</span>
-            <input ref={photoInput} name="photo" type="file" accept="image/jpeg,image/png,image/webp" aria-labelledby="photo-upload-label" aria-describedby={`photo-upload-help${photoError ? " photo-error" : ""}`} aria-invalid={Boolean(photoError)} onChange={choosePhoto} />
-          </label>
+            <label className="photo-file-choice">
+              Choose a photo
+              <input ref={photoInput} name="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-labelledby="photo-upload-label" aria-describedby={`photo-upload-help${photoError ? " photo-error" : ""}`} aria-invalid={Boolean(photoError)} onChange={choosePhoto} />
+            </label>
+            <button className="button button-light photo-camera-button" type="button" onClick={openCamera}>Take a photo with camera</button>
+            {cameraOpen ? (
+              <div className="camera-panel">
+                <video ref={videoElement} autoPlay playsInline muted aria-label="Live camera preview" onLoadedMetadata={() => setCameraReady(true)} />
+                <div className="camera-actions">
+                  <button className="button button-dark" type="button" onClick={capturePhoto} disabled={!cameraReady}>Capture photo</button>
+                  <button className="button button-light" type="button" onClick={closeCamera}>Close camera</button>
+                </div>
+              </div>
+            ) : null}
+          </div>
           {photo ? (
             <div className="form-wide photo-preview">
               <img src={photoPreview} alt={`Preview of ${photo.name}`} />

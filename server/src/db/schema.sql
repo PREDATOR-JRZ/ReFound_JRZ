@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS items (
   PRIMARY KEY (id),
   KEY idx_items_status_type_date (status, type, event_date),
   KEY idx_items_category (category)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS claims (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS claims (
   UNIQUE KEY uq_claim_item_email (item_id, claimant_email),
   KEY idx_claims_item_status (item_id, status),
   CONSTRAINT fk_claims_item FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS staff_users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -55,4 +55,4 @@ CREATE TABLE IF NOT EXISTS staff_users (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_staff_username (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
