@@ -16,7 +16,7 @@ ReFound is a mobile-first lost-and-found app built with React, Express, and MySQ
 ## Requirements
 
 - Node.js 18 or newer and npm
-- MySQL 8
+- MySQL 8 or MariaDB
 
 ## Setup
 
@@ -26,7 +26,13 @@ ReFound is a mobile-first lost-and-found app built with React, Express, and MySQ
 4. Create the database once. Replace `refound` and `root` if your server environment uses different values:
 
 ```powershell
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS refound CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS refound CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+For an existing database, update its default collation if needed:
+
+```powershell
+mysql -u root -p -e "ALTER DATABASE refound CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
 The server creates the required tables from `server/src/db/schema.sql` before it starts. The configured database user needs permission to create tables.
@@ -49,7 +55,7 @@ Vite prints the frontend address, usually `http://localhost:5173`. The API runs 
 
 ## Features
 
-- Create lost or found reports with private contact details.
+- Create lost or found reports with private contact details and an optional JPG, PNG, or WebP photo (up to 5 MB), uploaded or captured with the device camera.
 - Browse and search open items by type and keywords.
 - View up to five possible opposite-type matches based on category, location, and description.
 - Send a private claim with contact details and identifying information.
@@ -64,7 +70,7 @@ There is no email delivery. A random management key is created when a report is 
 
 - `GET /api/health` — API process health; does not test MySQL.
 - `GET /api/items` — list open items; optional `type=lost|found`, `q=search`, and `category`.
-- `POST /api/items` — create a report; returns the public item and one-time management key.
+- `POST /api/items` — create a report as JSON or multipart form data, optionally including one `photo` file (JPG, PNG, or WebP, up to 5 MB); returns the public item and one-time management key.
 - `GET /api/items/:id/matches` — return possible opposite-type matches.
 - `POST /api/items/:id/claims` — submit a claim for an active report, including a found item still with its finder.
 - `GET /api/manage/:id` — get a managed item and its claims; requires `X-Management-Token`.
