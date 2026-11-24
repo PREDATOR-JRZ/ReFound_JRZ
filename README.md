@@ -3,6 +3,8 @@
 **Group Members:**
 - Rayandayan, Justine R.
 - Jereza, Robert S.
+
+**Non-cooperative/Non-responsive:**
 - Sarabi, Aldemhar Khan F.
 - Macaumbos Jr, Sadjid E.
 - Arique, Enrico Nillo V.
