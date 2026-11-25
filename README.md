@@ -8,6 +8,8 @@
 - Sarabi, Aldemhar Khan F.
 - Macaumbos Jr, Sadjid E.
 - Arique, Enrico Nillo V.
+
+**Didn't even bother to send a full name for the readme:**
 - Balnig, Angel D.
 
 
