@@ -8,6 +8,8 @@
 - Sarabi, Aldemhar Khan F.
 - Macaumbos Jr, Sadjid E.
 - Arique, Enrico Nillo V.
+
+**Didn't even bother to send a full name for the readme:**
 - Balnig, Angel D.
 
 
@@ -53,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Vite prints the frontend address, usually `http://localhost:5173`. The API runs at `http://localhost:5000`.
+Vite prints the frontend address, usually `http://localhost:5173`. The API runs at `http://localhost:5000`. The Vite dev server listens on all network interfaces and proxies `/api` and `/uploads` to the local API, so for a remote-device test you only need to forward port `5173` in your development environment and open the forwarded frontend URL. Keep the API running on port `5000`; do not set `VITE_API_URL` for this setup. If you have a `client/.env` with `VITE_API_URL=http://localhost:5000/api`, remove that setting or change it to an empty value, then restart Vite.
 
 ## Features
 
@@ -85,7 +87,7 @@ There is no email delivery. A random management key is created when a report is 
 
 The item lifecycle is enforced by the API: found reports start `with_finder`, only staff can receive and verify them, claim approval requires verification, and resolution requires an approved pickup. Lost reports use `lost_reported` and cannot be processed as found-item custody cases.
 
-The client uses `VITE_API_URL`, defaulting to `http://localhost:5000/api`. The server reads `PORT`, `FRONTEND_URL`, database settings, and initial staff credentials from `server/.env`. Never commit `.env` files. Existing database installations are migrated on server startup.
+The client uses `VITE_API_URL` when set; otherwise it uses the same-origin `/api` path (proxied to the local API by Vite during development). Set `VITE_API_URL` to a full API URL when deploying the client separately from the API. The server reads `PORT`, `FRONTEND_URL`, database settings, and initial staff credentials from `server/.env`. Never commit `.env` files. Existing database installations are migrated on server startup.
 
 ## Verify
 
