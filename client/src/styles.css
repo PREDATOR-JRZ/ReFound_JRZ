@@ -37,6 +37,11 @@ body::before {
     radial-gradient(circle 300px at 92% 22%, rgb(176 160 255 / 34%), transparent 70%),
     radial-gradient(circle 360px at 78% 92%, rgb(110 214 220 / 34%), transparent 70%),
     radial-gradient(circle 280px at 6% 82%, rgb(255 190 210 / 26%), transparent 70%);
+  animation: drift 22s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-2%, 3%, 0) scale(1.08); }
 }
 
 button, input, select, textarea { font: inherit; }
@@ -139,5 +144,5 @@ a:hover > .arrow, .button:hover > .arrow { transform: translateX(3px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation: none !important; }
 }
